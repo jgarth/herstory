@@ -44,23 +44,37 @@ module LogsChanges
       # This part does change logging on the model's associations
       raise ArgumentError.new("Unknown option :include for log_changes. Did you mean :includes?") if options.has_key? :include
 
-      [*options[:includes]].flat_map do |association_options|
+      # Normalize options
+      return unless options.is_a? Hash
 
-        if association_options.is_a? Hash
-          association_name = association_options.keys.first
-          association_superordinate = association_options[association_name][:superordinate]
+      associations_with_options = options[:includes] || []
+
+      associations_with_options.flat_map do |included|
+          [*included].map{|k,v| [k, v || {}]}
+      end.to_h if associations_with_options
+
+      associations_with_options.each do |association_name, association_options|
+
+        if association_options && association_options.has_key?(:superordinate)
+          association_superordinate = association_options[:superordinate]
         else
-          association_name = association_options
           association_superordinate = :both
         end
 
         reflection = self.reflect_on_association(association_name)
+        # puts "Defining #{self} -> #{association_name} with options #{association_options}"
 
         raise ArgumentError.new("Unknown association '#{association_name}'") unless reflection
 
         reflected_class = reflection.class_name.constantize
 
         if reflection.belongs_to?
+          # Check if the other side already registered callbacks
+          if reflected_class.logs_changes_for? association_name.to_s.pluralize
+            # puts "SKIPPING #{self} -> has_many #{association_name} through: #{join_klass}."
+            return
+          end
+
           self.before_save -> (record) {
             break unless record.valid?
 
@@ -86,8 +100,8 @@ module LogsChanges
           second_association_name = reflection.klass.model_name.element
 
           # Check if the other side already registered callbacks
-
           if second_association_klass.logs_changes_for? first_association_name.pluralize
+            # puts "SKIPPING #{self} -> has_many #{association_name} through: #{join_klass}."
             return
           end
 
@@ -130,12 +144,14 @@ module LogsChanges
           }
 
         else
+          # puts "SKIPPING #{self} -> has_many #{association_name}"
+
           # raise "Only define logging for has_many through:, has_and_belongs_to_many, and belongs_to associations"
         end
 
-      self._logged_associations << association_name
+        self._logged_associations << association_name
 
-      end if options.has_key?(:includes)
+      end if associations_with_options
     end
 
     def self.logs_changes_for?(association_name)

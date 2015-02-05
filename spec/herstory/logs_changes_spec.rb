@@ -3,8 +3,8 @@ require 'rails_helper'
 RSpec.describe LogsChanges do
 
   before :all do
-    Arrival.logs_changes includes: [shipments: {superordinate: :record}, users: {}]
-    Shipment.logs_changes includes: [arrivals: {superordinate: :other_record}]
+    Arrival.logs_changes includes: {users: {}, shipments: {superordinate: :record}}
+    Shipment.logs_changes includes: {arrivals: {superordinate: :other_record}}
     User.logs_changes includes: [:arrival]
 
     Thread.current[:current_user] = User.create({name: 'Joanne Doe'})
@@ -16,6 +16,7 @@ RSpec.describe LogsChanges do
       # One callback is defined by default so
       # we expect there to be two callbacks
       expect(Arrival._save_callbacks.count).to eq(2)
+      expect(User._save_callbacks.count).to eq(4)
     end
 
     it "doesn't log a creation event when invalid" do
