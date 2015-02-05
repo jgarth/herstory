@@ -1,3 +1,2 @@
 --color
--P "spec/herstory/*_spec.rb"
 --format documentation
