@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe LogsChanges do
 
   before :all do
-    Arrival.logs_changes includes: [users: {}, shipments: {superordinate: :record}]
+    Arrival.logs_changes includes: {users: {}, shipments: {superordinate: :record}}
     Shipment.logs_changes includes: {arrivals: {superordinate: :other_record}}
     User.logs_changes includes: [:arrival]
     ArrivalLoad.logs_changes
