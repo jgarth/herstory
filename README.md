@@ -77,6 +77,10 @@ When you're done, register it with _Herstory_ like so:
 
 Done and done.
 
+## But what about polymorphic associations?
+
+Define logs_changes on your polymorphic model, done.
+
 ## Contributing
 
 Yeah, sure! All I care about (except basic manners) are SPECS for any bugs you report or changes you want to introduce. The actual fix/implementation is a distant second to good SPECS!

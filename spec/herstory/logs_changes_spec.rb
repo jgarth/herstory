@@ -3,10 +3,12 @@ require 'rails_helper'
 RSpec.describe LogsChanges do
 
   before :all do
+    Note.logs_changes includes: [:parent]
     Arrival.logs_changes includes: {users: {}, shipments: {superordinate: :record}}
     Shipment.logs_changes includes: {arrivals: {superordinate: :other_record}}
     User.logs_changes includes: [:arrival]
     ArrivalLoad.logs_changes
+
     Thread.current[:current_user] = User.create({name: 'Joanne Doe'})
   end
 
@@ -142,7 +144,6 @@ RSpec.describe LogsChanges do
     before :each do
       expect do
         arrival.users << user
-
       end.to change(Event, :count).by(2)
     end
 
@@ -154,6 +155,28 @@ RSpec.describe LogsChanges do
     it "logs an event on record" do
       last_event = user.events.reload.first
       expect(last_event.type).to eq('arrival_attached')
+    end
+  end
+
+  context "when a polymorphic record is added to has_many collection" do
+    let(:arrival) { Arrival.without_logging { Arrival.create } }
+    let(:user) { User.without_logging { User.create(name: 'John Wayne') } }
+    let(:note) { Note.new(user: user, text: 'John Wayne') }
+
+    before :each do
+      expect do
+        arrival.notes << note
+      end.to change(Event, :count).by(3)
+    end
+
+    it "logs an event on child" do
+      last_event = note.events.reload.last
+      expect(last_event.type).to eq('arrival_attached')
+    end
+
+    it "logs an event on parent" do
+      last_event = arrival.events.reload.first
+      expect(last_event.type).to eq('note_attached')
     end
   end
 

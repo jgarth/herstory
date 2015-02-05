@@ -66,11 +66,11 @@ module LogsChanges
 
         raise ArgumentError.new("Unknown association '#{association_name}'") unless reflection
 
-        reflected_class = reflection.class_name.constantize
+        reflected_class = reflection.class_name.constantize unless reflection.polymorphic?
 
         if reflection.belongs_to?
           # Check if the other side already registered callbacks
-          if reflected_class.logs_changes_for? association_name.to_s.pluralize
+          if !reflection.polymorphic? && reflected_class.logs_changes_for?(association_name.to_s.pluralize)
             # puts "SKIPPING #{self} -> has_many #{association_name} through: #{join_klass}."
             return
           end
@@ -78,7 +78,7 @@ module LogsChanges
           self.before_save -> (record) {
             break unless record.valid?
 
-            record_was = reflected_class.find_by_id(record.send("#{association_name}_id_was"))
+            record_was = reflected_class.find_by_id(record.send("#{association_name}_id_was")) unless reflection.polymorphic?
             record_is = record.send(association_name)
 
             self.log_record_change(record_was, record_is, association_superordinate)

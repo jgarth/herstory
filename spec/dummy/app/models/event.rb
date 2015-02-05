@@ -17,5 +17,5 @@ class Event < ActiveRecord::Base
   #
   # Scopes
   #
-  default_scope { order('events.created_at desc') }
+  default_scope { order('events.created_at DESC') }
 end

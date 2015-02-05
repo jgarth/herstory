@@ -41,6 +41,18 @@ ActiveRecord::Schema.define(version: 20150203160954) do
   add_index "events", ["parent_id", "parent_type"], name: "index_events_on_parent_id_and_parent_type"
   add_index "events", ["user_id"], name: "index_events_on_user_id"
 
+  create_table "notes", force: :cascade do |t|
+    t.integer  "user_id"
+    t.integer  "parent_id"
+    t.string   "parent_type"
+    t.text     "text"
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+  end
+
+  add_index "notes", ["parent_type", "parent_id"], name: "index_notes_on_parent_type_and_parent_id"
+  add_index "notes", ["user_id"], name: "index_notes_on_user_id"
+
   create_table "shipments", force: :cascade do |t|
     t.integer "pieces"
   end
