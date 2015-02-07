@@ -1,6 +1,7 @@
 # Join model
 class ArrivalLoad < ActiveRecord::Base
-  include LogsChanges
+  include Herstory
+
   belongs_to :arrival
   belongs_to :shipment
 

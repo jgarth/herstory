@@ -1,5 +1,5 @@
 class Note < ActiveRecord::Base
-  include LogsChanges
+  include Herstory
 
   belongs_to :parent, polymorphic: true
   belongs_to :user

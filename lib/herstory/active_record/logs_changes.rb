@@ -1,27 +1,8 @@
-module LogsChanges
+module Herstory
   extend ActiveSupport::Concern
 
   included do
     include HasEvents
-
-    def self.without_logging(&block)
-      begin
-        Thread.current[:skip_logging] = true
-        yield
-      ensure
-        Thread.current[:skip_logging] = false
-      end
-    end
-
-    def log_record_change(old_record, new_record, association_superordinate)
-      ChangeLogger.log_association_change(
-        :deletion, self, association_superordinate, old_record, false, Thread.current[:current_user]
-      ) if old_record
-
-      ChangeLogger.log_association_change(
-        :addition, self, association_superordinate, new_record, false, Thread.current[:current_user]
-      ) if new_record
-    end
 
     def self.logs_changes(options = {})
       # This part does change logging on the model
@@ -30,125 +11,14 @@ module LogsChanges
           []
         end
 
-        after_save -> (record) {
-          return if Thread.current[:skip_logging]
-
-          if record.id_changed?
-            ChangeLogger.log_creation(record, Thread.current[:current_user])
-          else
-            ChangeLogger.log_attribute_changes(record, Thread.current[:current_user])
-          end
-        }
+        after_save RecordCallbacks.new
       end
 
-      # This part does change logging on the model's associations
-      raise ArgumentError.new("Unknown option :include for log_changes. Did you mean :includes?") if options.has_key? :include
-
-      # Normalize options
-      return unless options.is_a? Hash
-
-      associations_with_options = options[:includes] || []
-
-      associations_with_options.flat_map do |included|
-          [*included].map{|k,v| [k, v || {}]}
-      end.to_h if associations_with_options
-
+      associations_with_options = Herstory.clean_options(options)
       associations_with_options.each do |association_name, association_options|
 
-        if association_options && association_options.has_key?(:superordinate)
-          association_superordinate = association_options[:superordinate]
-        else
-          association_superordinate = :both
-        end
-
-        reflection = self.reflect_on_association(association_name)
-        # puts "Defining #{self} -> #{association_name} with options #{association_options}"
-
-        raise ArgumentError.new("Unknown association '#{association_name}'") unless reflection
-
-        reflected_class = reflection.class_name.constantize unless reflection.polymorphic?
-
-        if reflection.belongs_to?
-          # Check if the other side already registered callbacks
-          if !reflection.polymorphic? && reflected_class.logs_changes_for?(association_name.to_s.pluralize)
-            # puts "SKIPPING #{self} -> has_many #{association_name} through: #{join_klass}."
-            return
-          end
-
-          self.before_save -> (record) {
-            break unless record.valid?
-
-            record_was = reflected_class.find_by_id(record.send("#{association_name}_id_was")) unless reflection.polymorphic?
-            record_is = record.send(association_name)
-
-            self.log_record_change(record_was, record_is, association_superordinate)
-
-          }, if: "#{association_name}_id_changed?"
-        elsif reflection.collection? && reflection.through_reflection
-          # Go for join model's belongs_to assocs instead
-
-          # Step 1: find join model
-          join_klass = reflection.through_reflection.klass
-
-          # Step 2: remember which associations to save on
-          first_association_klass = self
-
-          # FIXME: This is a guess that only works for CHICARGO
-          first_association_name = self.model_name.element
-
-          second_association_klass = reflection.klass
-          second_association_name = reflection.klass.model_name.element
-
-          # Check if the other side already registered callbacks
-          if second_association_klass.logs_changes_for? first_association_name.pluralize
-            # puts "SKIPPING #{self} -> has_many #{association_name} through: #{join_klass}."
-            return
-          end
-
-          # Step 2: add callbacks
-          join_klass.before_save -> (record) {
-
-            break unless record.valid?
-
-            if record.changes.include? "#{first_association_name}_id"
-              # Step 4a: save event one
-              @first_class_was = first_association_klass.find_by_id(record.send("#{second_association_name}_id_was"))
-              @first_class_is = record.send(first_association_name)
-            end
-
-            if record.changes.include? "#{second_association_name}_id"
-              # Step 4b: save event two
-              @second_class_was = second_association_klass.find_by_id(record.send("#{second_association_name}_id_was"))
-              @second_class_is = record.send(second_association_name)
-            end
-
-            @first_class_was.log_record_change(@second_class_was, nil, association_superordinate) if @second_class_was
-            @first_class_is.log_record_change(nil, @second_class_is, association_superordinate) if @second_class_is
-          }
-
-          join_klass.before_destroy -> (record) {
-            @first_class_was = first_association_klass.find_by_id(record.send("#{second_association_name}_id_was"))
-            @first_class_is = record.send(first_association_name)
-            @second_class_was = second_association_klass.find_by_id(record.send("#{second_association_name}_id_was"))
-            @second_class_is = record.send(second_association_name)
-
-            # Only need to call log_record_change once because
-            # it will save event for other record as well
-
-            if @first_class_was
-              @first_class_was.log_record_change(@second_class_was, nil, association_superordinate)
-            else
-              @first_class_is.log_record_change(@second_class_was, nil, association_superordinate)
-            end
-
-          }
-
-        else
-          # puts "SKIPPING #{self} -> has_many #{association_name}"
-
-          # raise "Only define logging for has_many through:, has_and_belongs_to_many, and belongs_to associations"
-        end
-
+        association_superordinate = association_options[:superordinate] || :both
+        Herstory.setup_association_logging(self, association_name, association_superordinate)
         self._logged_associations << association_name
 
       end if associations_with_options
@@ -158,5 +28,69 @@ module LogsChanges
       return false unless self.respond_to? :_logged_associations
       self._logged_associations.include? association_name.try(:to_sym)
     end
+  end
+
+  #
+  # Skip logging inside a given block
+  #
+  def self.without_logging(&block)
+    begin
+      Thread.current[:skip_logging] = true
+      yield
+    ensure
+      Thread.current[:skip_logging] = false
+    end
+  end
+
+  #
+  # Setup logging for a single association
+  #
+  def self.setup_association_logging (record, association_name, association_superordinate)
+    reflection = record.reflect_on_association(association_name)
+
+    raise ArgumentError.new("Unknown association '#{association_name}'") unless reflection
+
+    if reflection.belongs_to?
+
+      record.before_save BelongsToCallbacks.new(
+          reflection: reflection,
+          superordinate: association_superordinate
+        ), if: "#{association_name}_id_changed?"
+
+    elsif reflection.collection? && reflection.through_reflection
+      # Check if the other side already registered callbacks
+      return if reflection.klass && reflection.klass.logs_changes_for?(record.model_name.plural)
+
+      # Go for join model's belongs_to assocs instead
+      join_klass = reflection.through_reflection.klass
+
+      callback_handler = HasManyThroughCallbacks.new(
+          record: record,
+          reflection: reflection,
+          superordinate: association_superordinate
+        )
+
+      join_klass.before_save callback_handler
+      join_klass.before_destroy callback_handler
+
+    else
+      # raise "Only define logging for has_many through:, has_and_belongs_to_many, and belongs_to associations"
+    end
+  end
+
+  #
+  # Clean options given to logs_changes
+  #
+  def self.clean_options(options = {})
+    raise ArgumentError.new("Unknown option format: #{options}.") unless options.is_a? Hash
+
+    includes = options.delete(:includes)
+    raise ArgumentError.new("Unknown options '#{options.keys.join(',')}' for log_changes.") if options.keys.count > 0
+
+    includes = includes.flat_map do |included|
+        [*included].map{|k,v| [k, v || {}]}
+    end.to_h if includes.is_a? Array
+
+    includes || {}
   end
 end
