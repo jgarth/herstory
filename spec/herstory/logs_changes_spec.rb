@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe Herstory do
 
   before :all do
+    Note.logs_changes includes: [:parent]
     Thread.current[:current_user] = User.create({name: 'Joanne Doe'})
   end
 
@@ -23,13 +24,17 @@ RSpec.describe Herstory do
 
   context "when included in a class" do
 
-    it "assigns an after_save callback" do
+    it "provides a logs_changes_for? method" do
+      expect(Note).to respond_to(:logs_changes_for?)
+    end
+
+    it "does not assign the callback twice" do
       count = Note._save_callbacks.count
 
       expect do
         Note.logs_changes includes: [:parent]
         count = Note._save_callbacks.count
-      end.to change{ count }.by(2)
+      end.to change{ count }.by(0)
 
     end
 

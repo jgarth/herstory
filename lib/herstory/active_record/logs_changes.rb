@@ -5,10 +5,14 @@ module Herstory
     include HasEvents
 
     def self.logs_changes(options = {})
+      # Don't do anything if this is not the first
+      # call to logs_changes
+      return if self.logs_changes_for? :self
+
       # This part does change logging on the model
       self.class_eval do
         cattr_accessor :_logged_associations do
-          []
+          [:self]
         end
 
         after_save RecordCallbacks.new
@@ -18,6 +22,7 @@ module Herstory
       associations_with_options.each do |association_name, association_options|
 
         association_superordinate = association_options[:superordinate] || :both
+
         Herstory.setup_association_logging(self, association_name, association_superordinate)
         self._logged_associations << association_name
 
@@ -73,8 +78,19 @@ module Herstory
       join_klass.before_save callback_handler
       join_klass.before_destroy callback_handler
 
+    elsif reflection.macro == :has_and_belongs_to_many
+      callback_handler = HasAndBelongsToManyCallbacks.new(
+        record: record,
+        reflection: reflection,
+        superordinate: association_superordinate
+      )
+
+      record.send("after_add_for_#{reflection.name}") << callback_handler.after_add
+      record.send("after_remove_for_#{reflection.name}") << callback_handler.after_remove
+
     else
-      # raise "Only define logging for has_many through:, has_and_belongs_to_many, and belongs_to associations"
+      Rails.logger.debug "Tried to define logging for #{association_name}, #{reflection}, which is not supported."
+
     end
   end
 

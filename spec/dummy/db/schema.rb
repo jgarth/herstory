@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150203160954) do
+ActiveRecord::Schema.define(version: 20150208163517) do
 
   create_table "arrival_loads", force: :cascade do |t|
     t.integer "pieces_checkedin"
@@ -52,6 +52,17 @@ ActiveRecord::Schema.define(version: 20150203160954) do
 
   add_index "notes", ["parent_type", "parent_id"], name: "index_notes_on_parent_type_and_parent_id"
   add_index "notes", ["user_id"], name: "index_notes_on_user_id"
+
+  create_table "packs", force: :cascade do |t|
+  end
+
+  create_table "packs_shipments", id: false, force: :cascade do |t|
+    t.integer "pack_id"
+    t.integer "shipment_id"
+  end
+
+  add_index "packs_shipments", ["pack_id"], name: "index_packs_shipments_on_pack_id"
+  add_index "packs_shipments", ["shipment_id"], name: "index_packs_shipments_on_shipment_id"
 
   create_table "shipments", force: :cascade do |t|
     t.integer "pieces"

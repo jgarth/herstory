@@ -1,3 +1,6 @@
+<!-- FIXME: Caveat about logs_changes on both models needs to be equal
+      , one is loaded first, other is a noop, relevant in testing  -->
+
 ## What is this?
 
 Herstory is made to _record changes to ActiveRecord models, including all of their associations._
