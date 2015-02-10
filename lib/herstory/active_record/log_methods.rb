@@ -8,6 +8,4 @@ module Herstory
       :addition, self, association_superordinate, new_record, false, Thread.current[:current_user]
     ) if new_record
   end
-
-  
 end

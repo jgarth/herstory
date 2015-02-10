@@ -59,7 +59,7 @@ module Herstory
 
       # Rails.logger.debug("[HERSTORY] Monitoring association #{reflection.name} on #{record}")
 
-      record.before_save BelongsToCallbacks.new(
+      record.after_save BelongsToCallbacks.new(
           reflection: reflection,
           superordinate: association_superordinate
         ), if: "#{association_name}_id_changed?"

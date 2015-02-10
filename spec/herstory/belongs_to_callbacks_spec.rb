@@ -76,7 +76,7 @@ RSpec.describe Herstory::BelongsToCallbacks do
     end
 
     it "logs an event on child" do
-      last_event = note.events.reload.last
+      last_event = note.events.reload.first
       expect(last_event.type).to eq('arrival_attached')
     end
 
