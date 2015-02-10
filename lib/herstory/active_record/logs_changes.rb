@@ -57,17 +57,30 @@ module Herstory
 
     if reflection.belongs_to?
 
+      # Rails.logger.debug("[HERSTORY] Monitoring association #{reflection.name} on #{record}")
+
       record.before_save BelongsToCallbacks.new(
           reflection: reflection,
           superordinate: association_superordinate
         ), if: "#{association_name}_id_changed?"
 
     elsif reflection.collection? && reflection.through_reflection
-      # Check if the other side already registered callbacks
-      return if reflection.klass && reflection.klass.logs_changes_for?(record.model_name.plural)
-
       # Go for join model's belongs_to assocs instead
       join_klass = reflection.through_reflection.klass
+
+      # Make sure the join-model association is dependent destroy
+      # Otherwise callbacks will not be triggered
+      unless reflection.options[:dependent] == :destroy
+        raise ArgumentError.new("Association #{reflection.name} on #{record} must be declared dependent: :destroy")
+      end
+
+      # Check if the other side already registered callbacks
+      if reflection.klass && reflection.klass.logs_changes_for?(record.model_name.element.pluralize)
+        # Rails.logger.debug("[HERSTORY] NOT monitoring association #{reflection.name} on #{record} via #{join_klass} because it is already monitored by other side")
+        return
+      end
+
+      # Rails.logger.debug("[HERSTORY] Monitoring association #{reflection.name} on #{record} via #{join_klass}")
 
       callback_handler = HasManyThroughCallbacks.new(
           record: record,
@@ -89,7 +102,7 @@ module Herstory
       record.send("after_remove_for_#{reflection.name}") << callback_handler.after_remove
 
     else
-      Rails.logger.debug "Tried to define logging for #{association_name}, #{reflection}, which is not supported."
+      Rails.logger.debug "[HERSTORY] Tried to define logging for #{reflection.name} (#{reflection.macro}) on #{record}, which is not supported."
 
     end
   end
