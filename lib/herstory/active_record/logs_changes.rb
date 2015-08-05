@@ -102,7 +102,7 @@ module Herstory
       record.send("after_remove_for_#{reflection.name}") << callback_handler.after_remove
 
     else
-      Rails.logger.debug "[HERSTORY] Tried to define logging for #{reflection.name} (#{reflection.macro}) on #{record}, which is not supported."
+      # Rails.logger.debug "[HERSTORY] Tried to define logging for #{reflection.name} (#{reflection.macro}) on #{record}, which is not supported."
 
     end
   end

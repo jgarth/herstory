@@ -76,8 +76,8 @@ class ChangeLogger
       #      look for class constant: DAMAGE_SEVERITIES
       #      if found, look for translation under: <locale>.damage_severities
       if record.class.const_defined?(const_name = key.to_s.pluralize.upcase)
-        value     = I18n.t value, scope: key.to_s.pluralize
-        value_was = I18n.t value_was, scope: key.to_s.pluralize
+        value     = I18n.t value, scope: key.to_s.pluralize, default: value.to_s
+        value_was = I18n.t value_was, scope: key.to_s.pluralize, default: value_was.to_s
       end
 
       record.log(
