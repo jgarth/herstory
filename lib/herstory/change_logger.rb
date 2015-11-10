@@ -70,6 +70,10 @@ class ChangeLogger
       # Skip event logging when value was set from nil to ""
       next if value_was.blank? && value.blank? && !(value === false)
 
+      # assume empty string should be handled as nil value (elsewise I18n.t("") would crash)
+      value = nil if value == ''
+      value_was = nil if value_was == ''
+
       # Replace values by translated value if matching class const was found
       #
       # e.g. attribute name is damage_severity
