@@ -70,18 +70,16 @@ class ChangeLogger
       # Skip event logging when value was set from nil to ""
       next if value_was.blank? && value.blank? && !(value === false)
 
-      # assume empty string should be handled as nil value (elsewise I18n.t("") would crash)
-      value = nil if value == ''
-      value_was = nil if value_was == ''
 
       # Replace values by translated value if matching class const was found
       #
       # e.g. attribute name is damage_severity
       #      look for class constant: DAMAGE_SEVERITIES
       #      if found, look for translation under: <locale>.damage_severities
+      # if not translateable => just leave the original value as it is
       if record.class.const_defined?(const_name = key.to_s.pluralize.upcase)
-        value     = I18n.t value, scope: key.to_s.pluralize, default: value.to_s
-        value_was = I18n.t value_was, scope: key.to_s.pluralize, default: value_was.to_s
+        value     = I18n.t(value, scope: key.to_s.pluralize, default: value.to_s) rescue value
+        value_was = I18n.t(value_was, scope: key.to_s.pluralize, default: value_was.to_s) rescue value_was
       end
 
       record.log(
