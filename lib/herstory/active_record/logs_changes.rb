@@ -4,6 +4,8 @@ module Herstory
   included do
     include HasEvents
 
+    cattr_accessor(:_excluded_columns) { [] }
+
     def self.logs_changes(options = {})
       # Don't do anything if this is not the first
       # call to logs_changes
@@ -17,6 +19,10 @@ module Herstory
 
         after_save RecordCallbacks.new
       end
+
+      # extract excluded columns option
+      excluded_columns = options.delete(:exclude_columns)
+      self._excluded_columns = excluded_columns || []
 
       associations_with_options = Herstory.clean_options(options)
       associations_with_options.each do |association_name, association_options|
