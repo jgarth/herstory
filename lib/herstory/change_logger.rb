@@ -61,6 +61,9 @@ class ChangeLogger
     record.changes.each_pair do |key, value_array|
       value_was, value = value_array
 
+      # Skip event logging for excluded keys
+      next if record.class._excluded_columns.map(&:to_sym).include? key.to_sym
+
       # Skip event logging for created_at, updated_at
       next if %w( created_at updated_at ).include? key
 
