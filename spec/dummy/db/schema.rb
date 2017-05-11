@@ -1,4 +1,3 @@
-# encoding: UTF-8
 # This file is auto-generated from the current state of the database. Instead
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
@@ -24,34 +23,32 @@ ActiveRecord::Schema.define(version: 20150208163517) do
   end
 
   create_table "events", force: :cascade do |t|
-    t.integer  "newly_associated_object_id"
-    t.string   "newly_associated_object_type"
-    t.integer  "previously_associated_object_id"
-    t.string   "previously_associated_object_type"
-    t.integer  "parent_id"
-    t.string   "parent_type"
-    t.integer  "user_id"
-    t.string   "type"
-    t.string   "previous_value"
-    t.string   "new_value"
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
+    t.string "newly_associated_object_type"
+    t.integer "newly_associated_object_id"
+    t.string "previously_associated_object_type"
+    t.integer "previously_associated_object_id"
+    t.string "parent_type"
+    t.integer "parent_id"
+    t.integer "user_id"
+    t.string "type"
+    t.string "previous_value"
+    t.string "new_value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id", "parent_type"], name: "index_events_on_parent_id_and_parent_type"
+    t.index ["user_id"], name: "index_events_on_user_id"
   end
-
-  add_index "events", ["parent_id", "parent_type"], name: "index_events_on_parent_id_and_parent_type"
-  add_index "events", ["user_id"], name: "index_events_on_user_id"
 
   create_table "notes", force: :cascade do |t|
-    t.integer  "user_id"
-    t.integer  "parent_id"
-    t.string   "parent_type"
-    t.text     "text"
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
+    t.integer "user_id"
+    t.string "parent_type"
+    t.integer "parent_id"
+    t.text "text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_type", "parent_id"], name: "index_notes_on_parent_type_and_parent_id"
+    t.index ["user_id"], name: "index_notes_on_user_id"
   end
-
-  add_index "notes", ["parent_type", "parent_id"], name: "index_notes_on_parent_type_and_parent_id"
-  add_index "notes", ["user_id"], name: "index_notes_on_user_id"
 
   create_table "packs", force: :cascade do |t|
   end
@@ -59,17 +56,16 @@ ActiveRecord::Schema.define(version: 20150208163517) do
   create_table "packs_shipments", id: false, force: :cascade do |t|
     t.integer "pack_id"
     t.integer "shipment_id"
+    t.index ["pack_id"], name: "index_packs_shipments_on_pack_id"
+    t.index ["shipment_id"], name: "index_packs_shipments_on_shipment_id"
   end
-
-  add_index "packs_shipments", ["pack_id"], name: "index_packs_shipments_on_pack_id"
-  add_index "packs_shipments", ["shipment_id"], name: "index_packs_shipments_on_shipment_id"
 
   create_table "shipments", force: :cascade do |t|
     t.integer "pieces"
   end
 
   create_table "users", force: :cascade do |t|
-    t.string  "name"
+    t.string "name"
     t.integer "arrival_id"
   end
 
