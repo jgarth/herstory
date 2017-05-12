@@ -58,7 +58,7 @@ class ChangeLogger
     return unless record.valid?
 
     # Get a list of changed fields
-    record.changes.each_pair do |key, value_array|
+    record.saved_changes.each_pair do |key, value_array|
       value_was, value = value_array
 
       # Skip event logging for excluded keys
