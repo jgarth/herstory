@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    herstory (0.0.9)
+    herstory (0.1.0)
       rails
 
 GEM
