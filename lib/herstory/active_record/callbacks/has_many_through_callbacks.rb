@@ -11,16 +11,16 @@ module Herstory
       @superordinate = superordinate
     end
 
-    def before_save(record)
+    def after_save(record)
       return unless record.valid?
 
-      if record.changes.include?("#{@first_association_name}_id") &&
-         record.changes.include?("#{@second_association_name}_id")
+      if record.saved_changes.include?("#{@first_association_name}_id") &&
+        record.saved_changes.include?("#{@second_association_name}_id")
 
-        first_class_was = @first_association_klass.find_by_id(record.send("#{@second_association_name}_id_was"))
+        first_class_was = @first_association_klass.find_by_id(record.send("#{@second_association_name}_id_before_last_save"))
         first_class_is = record.send(@first_association_name)
 
-        second_class_was = @second_association_klass.find_by_id(record.send("#{@second_association_name}_id_was"))
+        second_class_was = @second_association_klass.find_by_id(record.send("#{@second_association_name}_id_before_last_save"))
         second_class_is = record.send(@second_association_name)
       end
 

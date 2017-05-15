@@ -13,9 +13,10 @@ RSpec.describe Herstory::HasManyThroughCallbacks do
     let(:shipment) { Herstory.without_logging { Shipment.create } }
 
     before :each do
+      arrival.shipments << shipment
       expect do
         arrival.shipments << shipment
-      end.to change(shipment.events.reload, :count).by(1)
+      end.to change{shipment.events.reload.count}.by(1)
     end
 
     it "logs an event on owner" do

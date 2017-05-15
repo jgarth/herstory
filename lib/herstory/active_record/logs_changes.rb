@@ -68,7 +68,7 @@ module Herstory
       record.after_save BelongsToCallbacks.new(
           reflection: reflection,
           superordinate: association_superordinate
-        ), if: "#{association_name}_id_changed?"
+        ), if: "saved_change_to_#{association_name}_id?"
 
     elsif reflection.collection? && reflection.through_reflection
       # Go for join model's belongs_to assocs instead
@@ -94,8 +94,10 @@ module Herstory
           superordinate: association_superordinate
         )
 
-      join_klass.before_save callback_handler
+      # join_klass.before_save callback_handler
       join_klass.before_destroy callback_handler
+      join_klass.after_save callback_handler
+      # join_klass.after_destroy callback_handler
 
     elsif reflection.macro == :has_and_belongs_to_many
       callback_handler = HasAndBelongsToManyCallbacks.new(

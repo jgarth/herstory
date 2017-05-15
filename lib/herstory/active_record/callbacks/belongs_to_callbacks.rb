@@ -8,15 +8,15 @@ module Herstory
     end
 
     def after_save(record)
-      return unless record.changes.include?("#{@association_name}_id")
+      return unless record.saved_changes.include?("#{@association_name}_id")
 
-      record_id_was, record_id_is = record.changes["#{@association_name}_id"]
+      record_id_was, record_id_is = record.saved_changes["#{@association_name}_id"]
 
       # There is no reflected class on polymorphic
       if @reflection.polymorphic?
 
         # So we check if a record was previously assigned
-        record_klass_name_was, record_klass_name_is = record.changes["#{@association_name}_type"]
+        record_klass_name_was, record_klass_name_is = record.saved_changes["#{@association_name}_type"]
 
         # And if it was, we find it
         if record_klass_name_was

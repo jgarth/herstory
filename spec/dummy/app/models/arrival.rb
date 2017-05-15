@@ -1,7 +1,7 @@
 class Arrival < ActiveRecord::Base
   include Herstory
-  has_many :shipments, through: :arrival_loads, dependent: :destroy
   has_many :arrival_loads
+  has_many :shipments, through: :arrival_loads, dependent: :destroy
   has_many :users
   has_many :notes, as: :parent
 
