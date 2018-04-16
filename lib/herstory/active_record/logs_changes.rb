@@ -68,7 +68,7 @@ module Herstory
       record.after_save BelongsToCallbacks.new(
           reflection: reflection,
           superordinate: association_superordinate
-        ), if: "saved_change_to_#{association_name}_id?"
+      ), if: "saved_change_to_#{association_name}_id?".to_sym
 
     elsif reflection.collection? && reflection.through_reflection
       # Go for join model's belongs_to assocs instead
