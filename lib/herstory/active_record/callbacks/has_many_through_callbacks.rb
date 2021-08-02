@@ -29,7 +29,7 @@ module Herstory
     end
 
     def before_destroy(record)
-      first_class_was = @first_association_klass.find_by_id(record.send("#{@second_association_name}_id_was"))
+      first_class_was = @first_association_klass.find_by_id(record.send("#{@first_association_name}_id_was"))
       first_class_is = record.send(@first_association_name)
       second_class_was = @second_association_klass.find_by_id(record.send("#{@second_association_name}_id_was"))
       second_class_is = record.send(@second_association_name)
