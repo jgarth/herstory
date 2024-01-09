@@ -3,6 +3,14 @@ class ChangeLogger
     record.log(type: 'created', user: user)
   end
 
+  def self.log_all_attributes_on_creation(record, user = nil)
+    attributes =
+      record
+        .attributes
+        .filter { |_key, value| value.present? }
+    record.log(type: 'attributes_at_creation', user: user, info: attributes)
+  end
+
   def self.log_association_change(change, record, superordinate, other_record, skip_logging_on_other=false, user=nil)
     unless %i( record other_record both none ).include? superordinate
       raise ArgumentError.new("Unknown value for ordinate '#{superordinate}'")

@@ -5,6 +5,7 @@ module Herstory
     include HasEvents
 
     cattr_accessor(:_excluded_columns) { [] }
+    cattr_accessor(:_herstory_options) { { log_all_attributes_on_creation: false} }
 
     def self.logs_changes(options = {})
       # Don't do anything if this is not the first
@@ -17,7 +18,7 @@ module Herstory
           [:self]
         end
 
-        after_save RecordCallbacks.new
+        after_save RecordCallbacks.new(_herstory_options)
       end
 
       # extract excluded columns option
